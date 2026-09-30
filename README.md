@@ -29,6 +29,12 @@ La clave pública sirve para conectar el cliente, pero no permite crear tablas n
 
 ## Publicar en Netlify
 
+Sitio de producción: https://termolab-clinico.netlify.app
+
+Panel de administración: https://app.netlify.com/projects/termolab-clinico
+
+El primer despliegue se realiza con la CLI. El repositorio de GitHub no está enlazado automáticamente: para que cada push despliegue una nueva versión, enlázalo desde la configuración del proyecto en Netlify.
+
 El archivo `netlify.toml` configura Node 24, `npm run build` y la carpeta de publicación `dist`.
 
 Para despliegues automáticos, importa este repositorio en Netlify y selecciona la rama `main`. Configura estas variables para el proceso de compilación antes de desplegar:
