@@ -22,8 +22,9 @@ La configuración se guarda en `.env.local`, excluido del control de versiones. 
 1. Abre tu proyecto en [Supabase](https://supabase.com/dashboard) y entra en SQL Editor.
 2. Copia el contenido completo de `supabase/schema.sql` y ejecútalo una vez. Crea equipment, readings, incident_resolutions y lab_members, sus validaciones y políticas de acceso.
 3. En Supabase, ve a Authentication > Users > Add user y crea tu usuario con correo y contraseña.
-4. Abre `supabase/habilitar-usuario.sql`, reemplaza el correo y el nombre de ejemplo por los del usuario y ejecútalo en SQL Editor. Comprueba que devuelve una fila con ese usuario.
-5. En la página local, inicia sesión en «Conexión con Supabase». Agrega un refrigerador y registra una lectura. Actualiza la página para comprobar su persistencia.
+4. Inicia sesión en «Conexión con Supabase». Todas las cuentas autenticadas tienen acceso; no necesitas crear membresías. Agrega un refrigerador y registra una lectura. Actualiza la página para comprobar su persistencia.
+
+Si la base de datos ya existía con la restricción de membresía, ejecuta una vez `supabase/migrations/20260930_acceso_cuentas_autenticadas.sql` en SQL Editor. No vuelvas a ejecutar el esquema inicial. La migración conserva los datos y habilita las cuentas existentes y futuras al iniciar sesión.
 
 La clave pública sirve para conectar el cliente, pero no permite crear tablas ni administrar usuarios. No hace falta compartir tu contraseña con el asistente.
 
@@ -61,7 +62,7 @@ Referencia: [Vite en Netlify](https://docs.netlify.com/build/frameworks/framewor
 
 ## Datos y permisos
 
-Modelo inicial de un laboratorio: todos los usuarios de `lab_members` comparten sus equipos y lecturas. Otros usuarios y visitantes anónimos no tienen acceso. La incorporación de miembros se realiza desde la administración de Supabase.
+Modelo de un laboratorio: todas las cuentas autenticadas de este proyecto Supabase comparten equipos, lecturas y cierres. No se requiere una fila en `lab_members`; esa tabla se conserva por compatibilidad. Los visitantes sin sesión no tienen acceso a los datos. La aplicación no incluye un formulario de registro; los usuarios se crean en Supabase Auth y deben poder autenticarse según su configuración de correo y contraseña.
 
 Las lecturas se insertan individualmente. El servidor toma los límites del equipo y establece la fecha de ingreso y el usuario autenticado. Conserva la fecha de medición como timestamptz; la interfaz muestra la hora local del computador. Los límites son inclusivos.
 

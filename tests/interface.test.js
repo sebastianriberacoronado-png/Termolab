@@ -12,7 +12,8 @@ test('formularios demo: equipo, lectura fuera de rango y cierre; sin guardado re
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
   w.HTMLDialogElement.prototype.close=function(){this.open=false;};
   w.HTMLElement.prototype.scrollIntoView=function(){};
-  const api={configured:false,supabase:null,loadData(){throw Error('Unexpected remote access');},insertEquipment(){throw Error('Unexpected remote access');},insertReading(){throw Error('Unexpected remote access');},insertResolution(){throw Error('Unexpected remote access');}};
+  let allowCloud=false,cloudLoads=0;
+  const api={configured:true,supabase:{auth:{onAuthStateChange(){},async getSession(){return {data:{session:null}};},async signInWithPassword(){return {data:{session:{user:{id:'account-without-membership',email:'operador@example.test'}}}};}}},async loadData(){if(!allowCloud)throw Error('Unexpected remote access');cloudLoads++;return {equipment:[],readings:[]};},insertEquipment(){throw Error('Unexpected remote access');},insertReading(){throw Error('Unexpected remote access');},insertResolution(){throw Error('Unexpected remote access');}};
   const orderingSource=await readFile(new URL('../equipment-order.js',import.meta.url),'utf8');
   const ordering=w.eval(`(${orderingSource.replace('export ', '')})`);
   const reportSource=(await readFile(new URL('../reports.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'').replace(/export function /g,'function ');
@@ -97,5 +98,15 @@ test('formularios demo: equipo, lectura fuera de rango y cierre; sin guardado re
     assert.equal($('report-chart').innerHTML,'');
     $('demo').click();
     assert.deepEqual(cardIds(),['demo-2','demo-1','demo-3']);
+    allowCloud=true;
+    $('login-form').elements.email.value='operador@example.test';
+    $('login-form').elements.password.value='test-only';
+    $('login-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(cloudLoads,1);
+    assert.equal($('session-panel').hidden,false);
+    assert.equal($('new-equipment').disabled,false);
+    assert.equal($('connection-badge').textContent,'Supabase conectado');
+    assert.doesNotMatch($('message').textContent,/lab_members|membresía/);
   } finally {w.close();}
 });

@@ -13,7 +13,6 @@ test('SQL: permisos, límites del servidor, lecturas inmutables y cierres único
       grant execute on function auth.uid() to authenticated, anon;`);
     await db.exec(await readFile(new URL('../supabase/schema.sql',import.meta.url),'utf8'));
     await db.exec(`insert into auth.users values ('00000000-0000-4000-8000-000000000001'),('00000000-0000-4000-8000-000000000002');
-      insert into lab_members values ('00000000-0000-4000-8000-000000000001','Operador');
       set role authenticated;
       set request.jwt.claim.sub='00000000-0000-4000-8000-000000000001';
       insert into equipment(id,code,name,location,min_temperature,max_temperature) values ('00000000-0000-4000-8000-000000000010','RF-01','Reactivos','Laboratorio',2,8);`);
@@ -29,9 +28,22 @@ test('SQL: permisos, límites del servidor, lecturas inmutables y cierres único
     await db.exec(`insert into incident_resolutions(reading_id,action,responsible) values ('00000000-0000-4000-8000-000000000020','Revisión','Operador')`);
     await assert.rejects(()=>db.exec(`insert into incident_resolutions(reading_id,action,responsible) values ('00000000-0000-4000-8000-000000000020','Otro cierre','Operador')`));
     await db.exec(`set request.jwt.claim.sub='00000000-0000-4000-8000-000000000002'`);
-    assert.equal((await db.query('select * from readings')).rows.length,0);
-    await assert.rejects(()=>db.exec(`insert into equipment(code,name,location,min_temperature,max_temperature) values ('RF-02','No autorizado','Laboratorio',2,8)`));
+    assert.equal((await db.query('select * from readings')).rows.length,1);
+    assert.equal((await db.query('select * from lab_members')).rows.length,0);
+    await db.exec(`insert into equipment(code,name,location,min_temperature,max_temperature) values ('RF-02','Usuario sin membresía','Laboratorio',2,8)`);
+    await assert.rejects(()=>db.exec(`insert into equipment(code,name,location,min_temperature,max_temperature,created_by) values ('RF-03','Suplantación','Laboratorio',2,8,'00000000-0000-4000-8000-000000000001')`));
+    // Simular políticas de una instalación anterior y aplicar la migración real.
+    await db.exec(`reset role;
+      alter policy "Members read readings" on public.readings using (exists(select 1 from public.lab_members where user_id = (select auth.uid())));
+      alter policy "Members add equipment" on public.equipment with check (created_by = (select auth.uid()) and exists(select 1 from public.lab_members where user_id = (select auth.uid())));`);
+    const migration=await readFile(new URL('../supabase/migrations/20260930_acceso_cuentas_autenticadas.sql',import.meta.url),'utf8');
+    await db.exec(migration);
+    await db.exec(migration); // Repetir no debe destruir datos ni fallar.
+    await db.exec('set role authenticated;');
+    assert.equal((await db.query('select * from readings')).rows.length,1);
+    await db.exec(`insert into equipment(code,name,location,min_temperature,max_temperature) values ('RF-04','Después de migración','Laboratorio',2,8)`);
     await db.exec('reset role; set role anon;');
     await assert.rejects(()=>db.query('select * from readings'));
+    await assert.rejects(()=>db.exec(`insert into equipment(code,name,location,min_temperature,max_temperature) values ('RF-05','Sin sesión','Laboratorio',2,8)`));
   } finally {await db.close();}
 });

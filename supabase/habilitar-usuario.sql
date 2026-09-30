@@ -1,3 +1,7 @@
+-- ARCHIVO ANTIGUO: ya no es necesario ejecutarlo para permitir acceso.
+-- Para actualizar una instalación existente, ejecutar en su lugar:
+-- migrations/20260930_acceso_cuentas_autenticadas.sql
+-- Se conserva este archivo por compatibilidad con instalaciones anteriores.
 -- Primero crea el usuario desde Authentication > Users > Add user.
 -- Elige su correo y contraseña en Supabase, no en el código de la aplicación.
 -- Reemplaza el correo y nombre en este script antes de ejecutarlo.

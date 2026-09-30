@@ -25,7 +25,7 @@ const reports = createReports({getState:()=>state,isReady:()=>ready,getMode:()=>
 function notify(message,error=false) { clearTimeout(toastTimer);$('message').textContent=message;$('message').classList.toggle('error',error);toastTimer=setTimeout(()=>$('message').textContent='',8000); }
 function errorMessage(error) {
   if(error.code==='23505') return 'Ese registro ya existe. Actualiza los datos antes de volver a intentarlo.';
-  if(error.code==='42501') return 'Tu usuario no tiene acceso. Revisa su membresía en lab_members.';
+  if(error.code==='42501') return 'No se pudo acceder a los datos. Revisa las políticas de acceso para usuarios autenticados en Supabase.';
   if(error.message?.includes('Failed to fetch')) return 'No se pudo conectar. Revisa Internet y vuelve a intentarlo; no se confirmó el guardado.';
   return error.message || 'No se pudo completar la operación.';
 }
@@ -58,7 +58,7 @@ function render() {
   $('session-email').textContent=session?.user.email||'';
   $('login-button').disabled=!configured||busy;
   $('logout').disabled=busy;
-  $('login-hint').textContent=configured?'Usa un usuario habilitado en el laboratorio.':'Disponible al configurar .env.local.';
+  $('login-hint').textContent=configured?'Ingresa con tu cuenta de Supabase. No necesitas una membresía adicional.':'Disponible al configurar .env.local.';
   $('connection-description').textContent=configured?'Proyecto configurado. Inicia sesión para consultar y guardar los registros en Supabase.':'Conexión pendiente: agrega la URL y la clave pública del proyecto en .env.local. Puedes explorar la demostración mientras tanto.';
   $('connection-badge').textContent=mode==='demo'?'Demostración':session?(ready?'Supabase conectado':'Conexión pendiente'):configured?'Supabase · iniciar sesión':'Supabase pendiente';
   $('connection-badge').className=`tag ${mode==='demo'?'alert':ready?'ok':''}`;
@@ -78,9 +78,6 @@ async function refresh() {
   busy=true;render();
   const ticket=generation;
   try {
-    const {data:member,error}=await supabase.from('lab_members').select('display_name').eq('user_id',session.user.id).maybeSingle();
-    if(error) throw error;
-    if(!member) throw Error('Tu cuenta aún no está habilitada en lab_members. Agrega la membresía desde Supabase.');
     const next=await loadData();
     if(ticket!==generation) return;
     state=next;ready=true;lastSynced=new Date();

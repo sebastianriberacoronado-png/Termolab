@@ -1,7 +1,8 @@
 -- Ejecutar una vez en SQL Editor de un proyecto Supabase nuevo.
--- Modelo inicial: un laboratorio; solo usuarios incluidos en lab_members.
+-- Un laboratorio compartido por todas las cuentas autenticadas.
 begin;
 
+-- Tabla conservada por compatibilidad; ya no es necesaria para el acceso.
 create table public.lab_members (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null check (length(trim(display_name)) > 0)
@@ -75,12 +76,12 @@ alter table public.equipment enable row level security;
 alter table public.readings enable row level security;
 alter table public.incident_resolutions enable row level security;
 
-create policy "Members read equipment" on public.equipment for select to authenticated using (exists(select 1 from public.lab_members where user_id = (select auth.uid())));
-create policy "Members add equipment" on public.equipment for insert to authenticated with check (created_by = (select auth.uid()) and exists(select 1 from public.lab_members where user_id = (select auth.uid())));
-create policy "Members read readings" on public.readings for select to authenticated using (exists(select 1 from public.lab_members where user_id = (select auth.uid())));
-create policy "Members add readings" on public.readings for insert to authenticated with check (created_by = (select auth.uid()) and exists(select 1 from public.lab_members where user_id = (select auth.uid())));
-create policy "Members read resolutions" on public.incident_resolutions for select to authenticated using (exists(select 1 from public.lab_members where user_id = (select auth.uid())));
-create policy "Members add resolutions" on public.incident_resolutions for insert to authenticated with check (created_by = (select auth.uid()) and exists(select 1 from public.lab_members where user_id = (select auth.uid())));
+create policy "Members read equipment" on public.equipment for select to authenticated using ((select auth.uid()) is not null);
+create policy "Members add equipment" on public.equipment for insert to authenticated with check (created_by = (select auth.uid()));
+create policy "Members read readings" on public.readings for select to authenticated using ((select auth.uid()) is not null);
+create policy "Members add readings" on public.readings for insert to authenticated with check (created_by = (select auth.uid()));
+create policy "Members read resolutions" on public.incident_resolutions for select to authenticated using ((select auth.uid()) is not null);
+create policy "Members add resolutions" on public.incident_resolutions for insert to authenticated with check (created_by = (select auth.uid()));
 
 revoke all on public.lab_members, public.equipment, public.readings, public.incident_resolutions from anon, authenticated;
 grant select on public.lab_members to authenticated;
@@ -88,6 +89,5 @@ grant select, insert on public.equipment, public.readings, public.incident_resol
 -- No se permite modificar ni borrar lecturas desde el cliente.
 commit;
 
--- Después de crear un usuario en Authentication > Users, habilitar su acceso:
--- insert into public.lab_members (user_id, display_name)
--- values ('UUID-DEL-USUARIO', 'Nombre del responsable');
+-- Después de crear un usuario en Authentication > Users, puede iniciar sesión.
+-- No se requiere crear una fila en lab_members.
