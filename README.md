@@ -27,6 +27,21 @@ La configuración se guarda en `.env.local`, excluido del control de versiones. 
 
 La clave pública sirve para conectar el cliente, pero no permite crear tablas ni administrar usuarios. No hace falta compartir tu contraseña con el asistente.
 
+## Publicar en Netlify
+
+El archivo `netlify.toml` configura Node 24, `npm run build` y la carpeta de publicación `dist`.
+
+Para despliegues automáticos, importa este repositorio en Netlify y selecciona la rama `main`. Configura estas variables para el proceso de compilación antes de desplegar:
+
+- `VITE_SUPABASE_URL`: URL de tu proyecto Supabase.
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: clave pública publishable del proyecto.
+
+Los valores están en `.env.local` en el computador de desarrollo; ese archivo no se publica en GitHub. Netlify necesita su propia configuración. Nunca utilices una clave secreta ni service_role. Tras cambiar variables, vuelve a desplegar.
+
+También se puede publicar la compilación local con la herramienta oficial de Netlify. El sitio resultante funciona sin mantener encendido el computador. La disponibilidad depende del servicio y del plan de Netlify y Supabase.
+
+Referencia: [Vite en Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/).
+
 ## Interfaz
 
 - Vista general: cantidad de equipos, equipos dentro del rango, incidencias pendientes y lecturas de hoy.
